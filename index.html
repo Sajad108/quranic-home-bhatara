@@ -142,7 +142,7 @@
 
       try {
         const { error } = await db
-          .from("student_registrations")
+          .from("student_registrations_new")
           .insert([record]);
 
         if (error) throw error;
