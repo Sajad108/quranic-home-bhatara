@@ -120,6 +120,38 @@
     </form>
 
     <p class="note">আপনার দেওয়া তথ্য রেজিস্ট্রেশনের কাজে ব্যবহার করা হবে।</p>
+  
+<section id="adminSection" style="margin-top:30px; padding:16px; border:1px solid #ccc; border-radius:10px;">
+  <h2>অ্যাডমিন লগইন</h2>
+
+  <form id="adminLoginForm">
+    <label for="adminEmail">অ্যাডমিন ইমেইল</label>
+    <input id="adminEmail" type="email" required
+           autocomplete="username">
+
+    <label for="adminPassword">পাসওয়ার্ড</label>
+    <input id="adminPassword" type="password" required
+           autocomplete="current-password">
+
+    <button type="submit" id="adminLoginBtn">
+      লগইন করুন
+    </button>
+  </form>
+
+  <p id="adminMessage" role="status"></p>
+
+  <div id="adminRecords" hidden>
+    <h3>শিক্ষার্থীদের রেজিস্ট্রেশন</h3>
+    <button type="button" id="loadRecordsBtn">
+      রেজিস্ট্রেশন দেখুন
+    </button>
+    <button type="button" id="adminLogoutBtn">
+      লগআউট
+    </button>
+    <div id="recordsList"></div>
+  </div>
+</section>
+
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -172,6 +204,89 @@
         button.disabled = false;
       }
     });
+  
+const adminLoginForm = document.getElementById("adminLoginForm");
+const adminMessage = document.getElementById("adminMessage");
+const adminRecords = document.getElementById("adminRecords");
+const recordsList = document.getElementById("recordsList");
+
+adminLoginForm.addEventListener("submit", async function(event) {
+  event.preventDefault();
+  adminMessage.textContent = "লগইন হচ্ছে...";
+
+  const email = document.getElementById("adminEmail").value.trim();
+  const password = document.getElementById("adminPassword").value;
+
+  const { data, error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+    adminMessage.textContent = "লগইন হয়নি। ইমেইল ও পাসওয়ার্ড পরীক্ষা করুন।";
+    return;
+  }
+
+  adminMessage.textContent = "লগইন সফল হয়েছে।";
+  adminRecords.hidden = false;
+  adminLoginForm.reset();
+  await loadAdminRecords();
+});
+
+async function loadAdminRecords() {
+  recordsList.replaceChildren();
+  adminMessage.textContent = "তথ্য লোড হচ্ছে...";
+
+  const { data, error } = await db
+    .from("student_registrations_new")
+    .select("student_name, father_name, mother_name, study_year, current_work, address, mobile");
+
+  if (error) {
+    adminMessage.textContent =
+      "তথ্য দেখা যায়নি। অ্যাডমিন অনুমতি পরীক্ষা করুন।";
+    return;
+  }
+
+  if (!data.length) {
+    adminMessage.textContent = "এখনো কোনো রেজিস্ট্রেশন নেই।";
+    return;
+  }
+
+  data.forEach(record => {
+    const card = document.createElement("div");
+    card.style.cssText = "padding:12px;margin:10px 0;border:1px solid #ccc;border-radius:8px";
+
+    [
+      ["নাম", record.student_name],
+      ["পিতার নাম", record.father_name],
+      ["মাতার নাম", record.mother_name],
+      ["শিক্ষা বর্ষ", record.study_year],
+      ["বর্তমান পেশা", record.current_work],
+      ["বর্তমান ঠিকানা", record.address],
+      ["মোবাইল", record.mobile]
+    ].forEach(([label, value]) => {
+      const line = document.createElement("p");
+      line.textContent = label + ": " + (value || "");
+      card.appendChild(line);
+    });
+
+    recordsList.appendChild(card);
+  });
+
+  adminMessage.textContent = "রেজিস্ট্রেশনের তথ্য লোড হয়েছে।";
+}
+
+document.getElementById("loadRecordsBtn")
+  .addEventListener("click", loadAdminRecords);
+
+document.getElementById("adminLogoutBtn")
+  .addEventListener("click", async function() {
+    await db.auth.signOut();
+    adminRecords.hidden = true;
+    recordsList.replaceChildren();
+    adminMessage.textContent = "আপনি লগআউট করেছেন।";
+  });
+
   </script>
 </body>
 </html>
