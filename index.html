@@ -152,10 +152,10 @@
         message.style.color = "green";
         form.reset();
       } catch (error) {
-        console.error(error);
-        message.textContent =
-          "দুঃখিত, তথ্য জমা হয়নি। সংযোগ ও ডেটাবেসের সেটিংস পরীক্ষা করুন।";
-        message.style.color = "red";
+  console.error("Registration error:", error);
+  message.textContent =
+    "সমস্যা: " + (error.message || JSON.stringify(error));
+  message.style.color = "red";
       } finally {
         button.disabled = false;
       }
