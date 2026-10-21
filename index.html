@@ -233,6 +233,7 @@ adminLoginForm.addEventListener("submit", async function(event) {
   await loadAdminRecords();
 });
 
+
 async function loadAdminRecords() {
   recordsList.replaceChildren();
   adminMessage.textContent = "তথ্য লোড হচ্ছে...";
@@ -247,86 +248,76 @@ async function loadAdminRecords() {
     return;
   }
 
-  if (!data.length) {
+  if (!data || data.length === 0) {
     adminMessage.textContent = "এখনো কোনো রেজিস্ট্রেশন নেই।";
     return;
   }
 
-  
-data.forEach(record => {
-  const card = document.createElement("div");
-  card.style.cssText =
-    "padding:12px;margin:10px 0;border:1px solid #ccc;border-radius:8px";
+  data.forEach(record => {
+    const card = document.createElement("div");
+    card.style.cssText =
+      "padding:12px;margin:10px 0;border:1px solid #ccc;border-radius:8px";
 
-  [
-    ["নাম", record.student_name],
-    ["পিতার নাম", record.father_name],
-    ["মাতার নাম", record.mother_name],
-    ["শিক্ষা বর্ষ", record.study_year],
-    ["বর্তমান পেশা", record.current_work],
-    ["বর্তমান ঠিকানা", record.address],
-    ["মোবাইল", record.mobile]
-  ].forEach(([label, value]) => {
-    const line = document.createElement("p");
-    line.textContent = label + ": " + (value || "");
-    card.appendChild(line);
-  });
-
-  const status = document.createElement("p");
-  status.textContent =
-    "পেমেন্টের অবস্থা: " +
-    (record.payment_status === "paid"
-      ? "পেমেন্ট সফল"
-      : "পেমেন্ট পেন্ডিং");
-  card.appendChild(status);
-
-  if (record.payment_status !== "paid") {
-    const payButton = document.createElement("button");
-    payButton.type = "button";
-    payButton.textContent = "পেমেন্ট সফল করুন";
-
-    payButton.addEventListener("click", async () => {
-      if (!confirm("বিকাশে ১৫০ টাকা পাওয়া নিশ্চিত করেছেন কি?")) {
-        return;
-      }
-
-      payButton.disabled = true;
-      payButton.textContent = "আপডেট হচ্ছে...";
-
-      const { error } = await db
-        .from("student_registrations_new")
-        .update({ payment_status: "paid" })
-        .eq("id", record.id);
-
-      if (error) {
-        alert("পেমেন্ট পরিবর্তন হয়নি। অনুমতি পরীক্ষা করুন।");
-        payButton.disabled = false;
-        payButton.textContent = "পেমেন্ট সফল করুন";
-        return;
-      }
-
-      alert("পেমেন্ট সফল হিসেবে সংরক্ষিত হয়েছে।");
-      await loadAdminRecords();
-    });
-
-    card.appendChild(payButton);
-  }
-
-  recordsList.appendChild(card);
-});
-
-adminMessage.textContent = "রেজিস্ট্রেশনের তথ্য লোড হয়েছে।";
- {
+    [
+      ["নাম", record.student_name],
+      ["পিতার নাম", record.father_name],
+      ["মাতার নাম", record.mother_name],
+      ["শিক্ষা বর্ষ", record.study_year],
+      ["বর্তমান পেশা", record.current_work],
+      ["বর্তমান ঠিকানা", record.address],
+      ["মোবাইল", record.mobile]
+    ].forEach(([label, value]) => {
       const line = document.createElement("p");
       line.textContent = label + ": " + (value || "");
       card.appendChild(line);
     });
+
+    const status = document.createElement("p");
+    status.textContent =
+      "পেমেন্টের অবস্থা: " +
+      (record.payment_status === "paid"
+        ? "পেমেন্ট সফল"
+        : "পেমেন্ট পেন্ডিং");
+    card.appendChild(status);
+
+    if (record.payment_status !== "paid") {
+      const payButton = document.createElement("button");
+      payButton.type = "button";
+      payButton.textContent = "পেমেন্ট সফল করুন";
+
+      payButton.addEventListener("click", async () => {
+        if (!confirm("বিকাশে ১৫০ টাকা পাওয়া নিশ্চিত করেছেন কি?")) {
+          return;
+        }
+
+        payButton.disabled = true;
+        payButton.textContent = "আপডেট হচ্ছে...";
+
+        const { error: updateError } = await db
+          .from("student_registrations_new")
+          .update({ payment_status: "paid" })
+          .eq("id", record.id);
+
+        if (updateError) {
+          alert("পেমেন্ট পরিবর্তন হয়নি। অ্যাডমিন অনুমতি পরীক্ষা করুন।");
+          payButton.disabled = false;
+          payButton.textContent = "পেমেন্ট সফল করুন";
+          return;
+        }
+
+        alert("পেমেন্ট সফল হিসেবে সংরক্ষিত হয়েছে।");
+        await loadAdminRecords();
+      });
+
+      card.appendChild(payButton);
+    }
 
     recordsList.appendChild(card);
   });
 
   adminMessage.textContent = "রেজিস্ট্রেশনের তথ্য লোড হয়েছে।";
 }
+
 
 document.getElementById("loadRecordsBtn")
   .addEventListener("click", loadAdminRecords);
@@ -338,7 +329,6 @@ document.getElementById("adminLogoutBtn")
     recordsList.replaceChildren();
     adminMessage.textContent = "আপনি লগআউট করেছেন।";
   });
-
   </script>
 </body>
 </html>
